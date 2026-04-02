@@ -32,6 +32,6 @@ export const getMessages = (groupId: string, page = 1, limit = 50) =>
   api.get(`/api/messages/${groupId}`, { params: { page, limit } });
 
 export const sendMessage = (groupId: string, content: string) =>
-  api.post("/api/messages", { groupId, content });
+  api.post(`/api/messages/${groupId}`, { content });
 
 export default api;

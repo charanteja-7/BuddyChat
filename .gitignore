@@ -1,3 +1,11 @@
 node_modules/
 .env
+.env.local
 *.log
+
+# Next.js build output
+.next/
+out/
+
+# TypeScript build info
+*.tsbuildinfo
