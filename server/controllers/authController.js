@@ -1,6 +1,14 @@
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 
+// ─── Input sanitization ───────────────────────────────────────────────────────
+
+/**
+ * Coerces a value to a plain string and strips any leading/trailing whitespace.
+ * Prevents NoSQL operator injection (e.g. { $gt: "" }) from reaching Mongoose.
+ */
+const sanitizeString = (value) => (typeof value === 'string' ? value.trim() : String(value ?? '').trim());
+
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
 /**
@@ -47,12 +55,14 @@ const register = async (req, res) => {
       return res.status(400).json({ message: 'All fields are required.' });
     }
 
-    const existingUser = await User.findOne({ email });
+    const safeEmail = sanitizeString(email).toLowerCase();
+
+    const existingUser = await User.findOne({ email: safeEmail });
     if (existingUser) {
       return res.status(409).json({ message: 'Email is already registered.' });
     }
 
-    const user = await User.create({ name, email, password });
+    const user = await User.create({ name: sanitizeString(name), email: safeEmail, password });
 
     issueTokenCookie(res, user._id);
 
@@ -78,8 +88,10 @@ const login = async (req, res) => {
       return res.status(400).json({ message: 'Email and password are required.' });
     }
 
+    const safeEmail = sanitizeString(email).toLowerCase();
+
     // Explicitly select password since the schema excludes it by default
-    const user = await User.findOne({ email }).select('+password');
+    const user = await User.findOne({ email: safeEmail }).select('+password');
     if (!user) {
       return res.status(401).json({ message: 'Invalid email or password.' });
     }

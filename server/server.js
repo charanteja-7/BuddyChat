@@ -4,6 +4,7 @@ const http = require('http');
 const express = require('express');
 const cors = require('cors');
 const cookieParser = require('cookie-parser');
+const rateLimit = require('express-rate-limit');
 const { Server } = require('socket.io');
 
 const connectDB = require('./config/db');
@@ -19,14 +20,45 @@ const server = http.createServer(app);
 
 // ── Middleware ────────────────────────────────────────────────────────────────
 
+const CLIENT_URL = process.env.CLIENT_URL || 'http://localhost:3000';
+
 app.use(
   cors({
-    origin: process.env.CLIENT_URL || 'http://localhost:3000',
+    origin: CLIENT_URL,
     credentials: true, // Required for cookies to be sent cross-origin
   })
 );
 app.use(express.json());
 app.use(cookieParser());
+
+// Global rate limit — defence-in-depth against volumetric abuse
+app.use(
+  rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 300,
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: { message: 'Too many requests. Please try again later.' },
+  })
+);
+
+/**
+ * CSRF protection for state-changing requests.
+ * sameSite:strict cookies already block cross-site POSTs from browsers, but an
+ * explicit Origin check provides defence-in-depth for non-browser clients and
+ * older browser edge-cases.
+ */
+const csrfProtect = (req, res, next) => {
+  if (['GET', 'HEAD', 'OPTIONS'].includes(req.method)) return next();
+
+  const origin = req.headers.origin || req.headers.referer || '';
+  if (!origin.startsWith(CLIENT_URL)) {
+    return res.status(403).json({ message: 'Forbidden: invalid request origin.' });
+  }
+  next();
+};
+
+app.use('/api', csrfProtect);
 
 // ── Routes ────────────────────────────────────────────────────────────────────
 
@@ -54,7 +86,7 @@ app.use((err, req, res, next) => {
 
 const io = new Server(server, {
   cors: {
-    origin: process.env.CLIENT_URL || 'http://localhost:3000',
+    origin: CLIENT_URL,
     credentials: true,
   },
 });
