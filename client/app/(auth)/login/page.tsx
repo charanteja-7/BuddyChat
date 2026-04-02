@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
+import { motion } from "framer-motion";
 
 export default function LoginPage() {
   const { login } = useAuth();
@@ -33,17 +34,29 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="w-full max-w-md">
+    <motion.div
+      className="w-full max-w-md"
+      initial={{ opacity: 0, y: 28 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5, ease: [0.23, 1, 0.32, 1] }}
+    >
       {/* Card */}
-      <div className="bg-gray-800/80 backdrop-blur rounded-2xl shadow-2xl p-8 border border-gray-700">
+      <div className="glass rounded-3xl shadow-2xl p-8 border border-white/10 glow-indigo">
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-white mb-2">💬 BuddyChat</h1>
-          <p className="text-gray-400 text-sm">Welcome back! Sign in to continue.</p>
+          <motion.div
+            className="text-5xl mb-4 inline-block"
+            animate={{ rotate: [0, -8, 8, 0] }}
+            transition={{ repeat: Infinity, duration: 4, ease: "easeInOut" }}
+          >
+            💬
+          </motion.div>
+          <h1 className="text-3xl font-bold gradient-text mb-2">BuddyChat</h1>
+          <p className="text-white/50 text-sm">Welcome back! Sign in to continue.</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-5">
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-1.5">
+            <label className="block text-sm font-medium text-white/70 mb-1.5">
               Email
             </label>
             <input
@@ -52,12 +65,12 @@ export default function LoginPage() {
               onChange={(e) => setEmail(e.target.value)}
               required
               placeholder="you@example.com"
-              className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
+              className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-white/25 focus:outline-none focus:ring-2 focus:ring-indigo-400/60 focus:border-transparent transition-all duration-300 hover:bg-white/8"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-1.5">
+            <label className="block text-sm font-medium text-white/70 mb-1.5">
               Password
             </label>
             <input
@@ -66,20 +79,30 @@ export default function LoginPage() {
               onChange={(e) => setPassword(e.target.value)}
               required
               placeholder="••••••••"
-              className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
+              className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-white/25 focus:outline-none focus:ring-2 focus:ring-indigo-400/60 focus:border-transparent transition-all duration-300 hover:bg-white/8"
             />
           </div>
 
           {error && (
-            <div className="px-4 py-3 bg-red-500/20 border border-red-500/50 rounded-xl text-red-300 text-sm">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="px-4 py-3 bg-red-500/15 border border-red-500/30 rounded-xl text-red-300 text-sm"
+            >
               {error}
-            </div>
+            </motion.div>
           )}
 
-          <button
+          <motion.button
             type="submit"
             disabled={isLoading}
-            className="w-full py-3 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-60 disabled:cursor-not-allowed rounded-xl font-semibold text-white transition-colors"
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.97 }}
+            className="w-full py-3 rounded-xl font-semibold text-white transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+            style={{
+              background: "linear-gradient(135deg, #6366f1, #8b5cf6, #a855f7)",
+              boxShadow: "0 4px 20px rgba(99,102,241,0.4)",
+            }}
           >
             {isLoading ? (
               <span className="flex items-center justify-center gap-2">
@@ -89,16 +112,16 @@ export default function LoginPage() {
             ) : (
               "Sign In"
             )}
-          </button>
+          </motion.button>
         </form>
 
-        <p className="text-center text-gray-400 text-sm mt-6">
+        <p className="text-center text-white/40 text-sm mt-6">
           Don&apos;t have an account?{" "}
-          <Link href="/register" className="text-indigo-400 hover:text-indigo-300 font-medium">
+          <Link href="/register" className="text-indigo-400 hover:text-violet-400 font-medium transition-colors">
             Create one
           </Link>
         </p>
       </div>
-    </div>
+    </motion.div>
   );
 }

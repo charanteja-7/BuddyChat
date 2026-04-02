@@ -6,6 +6,7 @@ import { useAuth } from "@/context/AuthContext";
 import GroupSidebar from "@/components/GroupSidebar";
 import { getGroups, createGroup as apiCreateGroup, joinGroup as apiJoinGroup } from "@/lib/api";
 import type { Group, User } from "@/types";
+import { motion } from "framer-motion";
 
 export default function DashboardPage() {
   const { user, isLoading, logout } = useAuth();
@@ -81,8 +82,11 @@ export default function DashboardPage() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin w-10 h-10 border-4 border-indigo-500 border-t-transparent rounded-full" />
+      <div className="flex items-center justify-center min-h-screen bg-[#0a0a0f]">
+        <div className="flex flex-col items-center gap-3">
+          <div className="w-10 h-10 rounded-full border-2 border-indigo-500/30 border-t-indigo-400 animate-spin" />
+          <p className="text-white/30 text-sm">Loading…</p>
+        </div>
       </div>
     );
   }
@@ -90,7 +94,10 @@ export default function DashboardPage() {
   if (!user) return null;
 
   return (
-    <div className="flex h-screen bg-gray-900 text-white overflow-hidden">
+    <div
+      className="flex h-screen text-white overflow-hidden"
+      style={{ background: "#0d0d18" }}
+    >
       <GroupSidebar
         groups={groups}
         activeGroupId={activeGroupId}
@@ -101,86 +108,151 @@ export default function DashboardPage() {
       />
 
       {/* Main area */}
-      <div className="flex-1 flex flex-col">
+      <div className="flex-1 flex flex-col min-w-0">
         {/* Top bar */}
-        <div className="h-14 border-b border-gray-700 bg-gray-800 flex items-center justify-between px-6">
-          <h2 className="font-semibold text-gray-200">Dashboard</h2>
+        <div
+          className="h-14 border-b border-white/8 flex items-center justify-between px-6 flex-shrink-0"
+          style={{
+            background: "rgba(10,10,22,0.7)",
+            backdropFilter: "blur(20px)",
+            WebkitBackdropFilter: "blur(20px)",
+          }}
+        >
+          <h2 className="font-semibold text-white/80 text-sm">Dashboard</h2>
           <div className="flex items-center gap-3">
-            <span className="text-sm text-gray-400">
-              Hi, <span className="text-white font-medium">{user.name}</span>
-            </span>
-            <button
+            <div className="flex items-center gap-2">
+              <div
+                className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold text-white"
+                style={{ background: "linear-gradient(135deg, #6366f1, #8b5cf6)" }}
+              >
+                {user.name.charAt(0).toUpperCase()}
+              </div>
+              <span className="text-sm text-white/60">
+                <span className="text-white font-medium">{user.name}</span>
+              </span>
+            </div>
+            <motion.button
               onClick={handleLogout}
-              className="text-sm px-3 py-1.5 bg-gray-700 hover:bg-gray-600 rounded-lg transition-colors"
+              whileHover={{ scale: 1.04 }}
+              whileTap={{ scale: 0.96 }}
+              className="text-sm px-3 py-1.5 bg-white/6 hover:bg-white/10 border border-white/10 rounded-lg transition-all text-white/70"
             >
               Sign out
-            </button>
+            </motion.button>
           </div>
         </div>
 
         {/* Content */}
-        <div className="flex-1 flex items-center justify-center">
+        <div className="flex-1 flex items-center justify-center chat-bg">
           <div className="text-center max-w-md px-4">
             {activeGroup ? (
-              <div className="space-y-4">
-                <div className="w-16 h-16 bg-indigo-600 rounded-2xl flex items-center justify-center text-2xl font-bold mx-auto">
+              <motion.div
+                className="space-y-5"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.4, ease: [0.23, 1, 0.32, 1] }}
+              >
+                <div
+                  className="w-16 h-16 rounded-2xl flex items-center justify-center text-2xl font-bold mx-auto shadow-xl"
+                  style={{
+                    background: "linear-gradient(135deg, #6366f1, #8b5cf6)",
+                    boxShadow: "0 8px 32px rgba(99,102,241,0.4)",
+                  }}
+                >
                   {activeGroup.name.charAt(0).toUpperCase()}
                 </div>
-                <h2 className="text-2xl font-bold">{activeGroup.name}</h2>
-                <p className="text-gray-400 text-sm">
-                  {activeGroup.members.length} member
-                  {activeGroup.members.length !== 1 ? "s" : ""}
-                </p>
+                <div>
+                  <h2 className="text-2xl font-bold text-white">{activeGroup.name}</h2>
+                  <p className="text-white/40 text-sm mt-1">
+                    {activeGroup.members.length} member{activeGroup.members.length !== 1 ? "s" : ""}
+                  </p>
+                </div>
                 {inviteLink && (
-                  <div className="bg-gray-800 rounded-xl p-4 border border-gray-700">
-                    <p className="text-xs text-gray-400 mb-2 font-medium uppercase tracking-wide">
-                      Invite Link
+                  <div
+                    className="rounded-2xl p-4 border border-white/10 text-left"
+                    style={{ background: "rgba(255,255,255,0.04)" }}
+                  >
+                    <p className="text-[10px] text-white/35 mb-2 font-semibold uppercase tracking-widest">
+                      Invite Code
                     </p>
                     <div className="flex items-center gap-2">
-                      <code className="flex-1 text-xs text-indigo-300 bg-gray-700 px-3 py-2 rounded-lg truncate">
+                      <code className="flex-1 text-xs text-indigo-300 bg-white/6 border border-white/8 px-3 py-2 rounded-lg truncate font-mono">
                         {activeGroup.inviteCode}
                       </code>
-                      <button
+                      <motion.button
                         onClick={copyInvite}
-                        className="px-3 py-2 bg-indigo-600 hover:bg-indigo-700 rounded-lg text-xs font-medium transition-colors whitespace-nowrap"
+                        whileHover={{ scale: 1.04 }}
+                        whileTap={{ scale: 0.96 }}
+                        className="px-3 py-2 rounded-lg text-xs font-semibold text-white whitespace-nowrap transition-all"
+                        style={{
+                          background: copied
+                            ? "linear-gradient(135deg, #22c55e, #16a34a)"
+                            : "linear-gradient(135deg, #6366f1, #8b5cf6)",
+                        }}
                       >
                         {copied ? "✓ Copied!" : "Copy"}
-                      </button>
+                      </motion.button>
                     </div>
                   </div>
                 )}
-                <button
+                <motion.button
                   onClick={() => router.push(`/chat/${activeGroup.id}`)}
-                  className="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 rounded-xl font-semibold transition-colors"
+                  whileHover={{ scale: 1.04 }}
+                  whileTap={{ scale: 0.97 }}
+                  className="px-8 py-3 rounded-xl font-semibold text-white transition-all"
+                  style={{
+                    background: "linear-gradient(135deg, #6366f1, #8b5cf6)",
+                    boxShadow: "0 6px 24px rgba(99,102,241,0.4)",
+                  }}
                 >
                   Open Chat →
-                </button>
-              </div>
+                </motion.button>
+              </motion.div>
             ) : (
-              <div className="space-y-4">
-                <div className="text-6xl">💬</div>
-                <h2 className="text-2xl font-bold text-gray-100">
-                  Welcome to BuddyChat
-                </h2>
-                <p className="text-gray-400 text-sm leading-relaxed">
-                  Select a group from the sidebar to start chatting, or create a
-                  new group to invite your friends.
-                </p>
-                <div className="flex gap-3 justify-center pt-2">
-                  <div className="bg-gray-800 rounded-xl p-4 flex-1 border border-gray-700 max-w-32">
-                    <div className="text-2xl mb-2">✨</div>
-                    <p className="text-xs text-gray-300">Create a group</p>
-                  </div>
-                  <div className="bg-gray-800 rounded-xl p-4 flex-1 border border-gray-700 max-w-32">
-                    <div className="text-2xl mb-2">🔗</div>
-                    <p className="text-xs text-gray-300">Join via invite</p>
-                  </div>
-                  <div className="bg-gray-800 rounded-xl p-4 flex-1 border border-gray-700 max-w-32">
-                    <div className="text-2xl mb-2">⚡</div>
-                    <p className="text-xs text-gray-300">Real-time chat</p>
-                  </div>
+              <motion.div
+                className="space-y-6"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, ease: [0.23, 1, 0.32, 1] }}
+              >
+                <motion.div
+                  className="text-6xl"
+                  animate={{ scale: [1, 1.08, 1] }}
+                  transition={{ repeat: Infinity, duration: 3, ease: "easeInOut" }}
+                >
+                  💬
+                </motion.div>
+                <div>
+                  <h2 className="text-2xl font-bold text-white">Welcome to BuddyChat</h2>
+                  <p className="text-white/40 text-sm mt-2 leading-relaxed">
+                    Select a group from the sidebar to start chatting,<br />
+                    or create a new group to invite your friends.
+                  </p>
                 </div>
-              </div>
+                <div className="flex gap-3 justify-center">
+                  {[
+                    { icon: "✨", label: "Create a group" },
+                    { icon: "🔗", label: "Join via invite" },
+                    { icon: "⚡", label: "Real-time chat" },
+                  ].map(({ icon, label }, i) => (
+                    <motion.div
+                      key={label}
+                      initial={{ opacity: 0, y: 16 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.1 + i * 0.1, duration: 0.4 }}
+                      whileHover={{ y: -4, scale: 1.03 }}
+                      className="rounded-2xl p-4 flex-1 border border-white/8 cursor-default max-w-32 transition-shadow"
+                      style={{
+                        background: "rgba(255,255,255,0.04)",
+                        boxShadow: "0 4px 16px rgba(0,0,0,0.2)",
+                      }}
+                    >
+                      <div className="text-2xl mb-2">{icon}</div>
+                      <p className="text-xs text-white/50 font-medium">{label}</p>
+                    </motion.div>
+                  ))}
+                </div>
+              </motion.div>
             )}
           </div>
         </div>

@@ -6,6 +6,7 @@ import type { Message, User } from "@/types";
 import { getMessages } from "@/lib/api";
 import MessageBubble from "./MessageBubble";
 import TypingIndicator from "./TypingIndicator";
+import { motion } from "framer-motion";
 
 interface ChatWindowProps {
   groupId: string;
@@ -96,16 +97,23 @@ export default function ChatWindow({ groupId, currentUser, socket }: ChatWindowP
   };
 
   return (
-    <div className="flex flex-col h-full bg-gray-800">
+    <div className="flex flex-col h-full chat-bg">
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto px-4 py-4">
+      <div className="flex-1 overflow-y-auto px-4 py-4 space-y-0.5">
         {isLoading ? (
-          <div className="flex items-center justify-center h-full">
-            <div className="animate-spin w-8 h-8 border-4 border-indigo-500 border-t-transparent rounded-full" />
+          <div className="flex flex-col items-center justify-center h-full gap-3">
+            <div className="w-10 h-10 rounded-full border-2 border-indigo-500/30 border-t-indigo-400 animate-spin" />
+            <p className="text-white/30 text-xs">Loading messages…</p>
           </div>
         ) : messages.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-full text-gray-500">
-            <span className="text-4xl mb-3">💬</span>
+          <div className="flex flex-col items-center justify-center h-full text-white/30 gap-3">
+            <motion.span
+              className="text-5xl"
+              animate={{ scale: [1, 1.1, 1] }}
+              transition={{ repeat: Infinity, duration: 2.5, ease: "easeInOut" }}
+            >
+              💬
+            </motion.span>
             <p className="text-sm">No messages yet. Say hello!</p>
           </div>
         ) : (
@@ -126,24 +134,44 @@ export default function ChatWindow({ groupId, currentUser, socket }: ChatWindowP
       {/* Typing indicator */}
       <TypingIndicator typingUsers={typingUsers.map((u) => u.name)} />
 
-      {/* Input */}
-      <div className="px-4 py-3 border-t border-gray-700 bg-gray-900">
+      {/* Input area */}
+      <div
+        className="px-4 py-3 border-t border-white/8 flex-shrink-0"
+        style={{
+          background: "rgba(10,10,20,0.7)",
+          backdropFilter: "blur(16px)",
+          WebkitBackdropFilter: "blur(16px)",
+        }}
+      >
         <div className="flex items-center gap-3">
           <input
             type="text"
             value={input}
             onChange={handleInputChange}
             onKeyDown={handleKeyDown}
-            placeholder="Type a message..."
-            className="flex-1 px-4 py-2.5 bg-gray-700 text-white rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 placeholder-gray-400"
+            placeholder="Type a message…"
+            className="flex-1 px-5 py-2.5 rounded-full text-sm text-white placeholder-white/30 border border-white/10 focus:outline-none focus:ring-2 focus:ring-indigo-400/50 focus:border-transparent transition-all duration-300"
+            style={{
+              background: "rgba(255,255,255,0.07)",
+              backdropFilter: "blur(8px)",
+              WebkitBackdropFilter: "blur(8px)",
+            }}
           />
-          <button
+          <motion.button
             onClick={sendMessage}
             disabled={!input.trim()}
-            className="w-10 h-10 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed rounded-full flex items-center justify-center transition-colors"
+            whileHover={{ scale: 1.08 }}
+            whileTap={{ scale: 0.92 }}
+            className="w-10 h-10 flex-shrink-0 rounded-full flex items-center justify-center disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-300"
+            style={{
+              background: input.trim()
+                ? "linear-gradient(135deg, #6366f1, #8b5cf6)"
+                : "rgba(255,255,255,0.1)",
+              boxShadow: input.trim() ? "0 4px 16px rgba(99,102,241,0.45)" : "none",
+            }}
           >
             <svg
-              className="w-5 h-5 text-white rotate-45"
+              className="w-4 h-4 text-white rotate-45"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -155,7 +183,7 @@ export default function ChatWindow({ groupId, currentUser, socket }: ChatWindowP
                 d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"
               />
             </svg>
-          </button>
+          </motion.button>
         </div>
       </div>
     </div>

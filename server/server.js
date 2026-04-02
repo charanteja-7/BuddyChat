@@ -45,24 +45,32 @@ app.use(
 
 // ── CSRF protection (double-submit cookie pattern) ────────────────────────────
 
-const { generateToken, doubleCsrfProtection } = doubleCsrf({
+const { generateCsrfToken, doubleCsrfProtection } = doubleCsrf({
   getSecret: () => process.env.JWT_SECRET || 'csrf-fallback-secret',
+  getSessionIdentifier: (req) => `${req.ip || 'unknown-ip'}:${req.headers['user-agent'] || 'unknown-agent'}`,
   cookieName: 'x-csrf-token',
   cookieOptions: {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
     sameSite: 'strict',
   },
-  getTokenFromRequest: (req) => req.headers['x-csrf-token'],
+  getCsrfTokenFromRequest: (req) => req.headers['x-csrf-token'],
 });
 
 // Endpoint the SPA calls once on load to obtain a CSRF token
 app.get('/api/csrf-token', (req, res) => {
-  res.json({ csrfToken: generateToken(req, res) });
+  res.json({ csrfToken: generateCsrfToken(req, res) });
 });
 
-// Apply CSRF validation to all mutating API routes
-app.use('/api', doubleCsrfProtection);
+// Apply CSRF validation only to unsafe API methods and keep the token endpoint public.
+const csrfProtectedMethods = new Set(['POST', 'PUT', 'PATCH', 'DELETE']);
+app.use('/api', (req, res, next) => {
+  if (req.path === '/csrf-token' || !csrfProtectedMethods.has(req.method)) {
+    return next();
+  }
+
+  return doubleCsrfProtection(req, res, next);
+});
 
 // ── Routes ────────────────────────────────────────────────────────────────────
 
