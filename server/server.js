@@ -5,6 +5,7 @@ const express = require('express');
 const cors = require('cors');
 const cookieParser = require('cookie-parser');
 const rateLimit = require('express-rate-limit');
+const { doubleCsrf } = require('csrf-csrf');
 const { Server } = require('socket.io');
 
 const connectDB = require('./config/db');
@@ -42,23 +43,26 @@ app.use(
   })
 );
 
-/**
- * CSRF protection for state-changing requests.
- * sameSite:strict cookies already block cross-site POSTs from browsers, but an
- * explicit Origin check provides defence-in-depth for non-browser clients and
- * older browser edge-cases.
- */
-const csrfProtect = (req, res, next) => {
-  if (['GET', 'HEAD', 'OPTIONS'].includes(req.method)) return next();
+// ── CSRF protection (double-submit cookie pattern) ────────────────────────────
 
-  const origin = req.headers.origin || req.headers.referer || '';
-  if (!origin.startsWith(CLIENT_URL)) {
-    return res.status(403).json({ message: 'Forbidden: invalid request origin.' });
-  }
-  next();
-};
+const { generateToken, doubleCsrfProtection } = doubleCsrf({
+  getSecret: () => process.env.JWT_SECRET || 'csrf-fallback-secret',
+  cookieName: 'x-csrf-token',
+  cookieOptions: {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'strict',
+  },
+  getTokenFromRequest: (req) => req.headers['x-csrf-token'],
+});
 
-app.use('/api', csrfProtect);
+// Endpoint the SPA calls once on load to obtain a CSRF token
+app.get('/api/csrf-token', (req, res) => {
+  res.json({ csrfToken: generateToken(req, res) });
+});
+
+// Apply CSRF validation to all mutating API routes
+app.use('/api', doubleCsrfProtection);
 
 // ── Routes ────────────────────────────────────────────────────────────────────
 
