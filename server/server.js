@@ -18,6 +18,7 @@ const initSocket = require('./sockets');
 // ── App & HTTP server setup ───────────────────────────────────────────────────
 
 const app = express();
+app.set('trust proxy', 1);
 const server = http.createServer(app);
 
 // ── Middleware ────────────────────────────────────────────────────────────────
@@ -48,7 +49,7 @@ app.use(
 
 const { generateCsrfToken, doubleCsrfProtection } = doubleCsrf({
   getSecret: () => process.env.JWT_SECRET || 'csrf-fallback-secret',
-  getSessionIdentifier: (req) => `${req.ip || 'unknown-ip'}:${req.headers['user-agent'] || 'unknown-agent'}`,
+  getSessionIdentifier: (req) => req.headers['user-agent'] || 'unknown-agent',
   cookieName: 'x-csrf-token',
   cookieOptions: {
     httpOnly: true,
