@@ -71,6 +71,11 @@ const initSocket = (io) => {
 
     broadcastOnlineUsers();
 
+    // ── request-online-users ──────────────────────────────────────────────────
+    socket.on('request-online-users', () => {
+      socket.emit('online-users', Array.from(onlineUsers.keys()));
+    });
+
     // ── join-room ─────────────────────────────────────────────────────────────
     socket.on('join-room', async (groupId) => {
       try {
@@ -90,10 +95,10 @@ const initSocket = (io) => {
     });
 
     // ── send-message ──────────────────────────────────────────────────────────
-    socket.on('send-message', async ({ groupId, content }) => {
+    socket.on('send-message', async ({ groupId, content, mediaUrl, mediaType, replyTo }) => {
       try {
-        if (!groupId || !content || !content.trim()) {
-          socket.emit('error', { message: 'groupId and content are required.' });
+        if (!groupId || (!content && !mediaUrl)) {
+          socket.emit('error', { message: 'groupId and either content or mediaUrl are required.' });
           return;
         }
 
@@ -107,16 +112,78 @@ const initSocket = (io) => {
         const message = await Message.create({
           sender: socket.user._id,
           groupId,
-          content: content.trim(),
+          content: content ? content.trim() : undefined,
+          mediaUrl,
+          mediaType,
+          replyTo,
         });
 
         await message.populate('sender', 'name email avatar');
+        if (message.replyTo) {
+          await message.populate({ path: 'replyTo', populate: { path: 'sender', select: 'name avatar' } });
+        }
 
         // Broadcast to everyone in the room, including the sender
         io.to(groupId).emit('new-message', message);
       } catch (err) {
         console.error('send-message error:', err.message);
         socket.emit('error', { message: 'Failed to send message.' });
+      }
+    });
+
+    // ── edit-message ──────────────────────────────────────────────────────────
+    socket.on('edit-message', async ({ messageId, groupId, content }) => {
+      try {
+        const message = await Message.findOne({ _id: messageId, sender: socket.user._id });
+        if (!message) return socket.emit('error', { message: 'Message not found or unauthorized' });
+        
+        message.content = content.trim();
+        message.isEdited = true;
+        await message.save();
+        await message.populate('sender', 'name email avatar');
+
+        io.to(groupId).emit('message-updated', message);
+      } catch (err) {
+        console.error('edit-message error:', err.message);
+        socket.emit('error', { message: 'Failed to edit message.' });
+      }
+    });
+
+    // ── delete-message ────────────────────────────────────────────────────────
+    socket.on('delete-message', async ({ messageId, groupId }) => {
+      try {
+        const message = await Message.findOne({ _id: messageId, sender: socket.user._id });
+        if (!message) return socket.emit('error', { message: 'Message not found or unauthorized' });
+
+        message.isDeleted = true;
+        message.content = undefined;
+        message.mediaUrl = undefined;
+        message.mediaType = undefined;
+        await message.save();
+        await message.populate('sender', 'name email avatar');
+
+        io.to(groupId).emit('message-updated', message);
+      } catch (err) {
+        console.error('delete-message error:', err.message);
+        socket.emit('error', { message: 'Failed to delete message.' });
+      }
+    });
+
+    // ── mark-messages-read ────────────────────────────────────────────────────
+    socket.on('mark-messages-read', async ({ groupId }) => {
+      try {
+        await Message.updateMany(
+          { 
+            groupId, 
+            sender: { $ne: socket.user._id }, 
+            readBy: { $ne: socket.user._id } 
+          },
+          { $addToSet: { readBy: socket.user._id } }
+        );
+
+        socket.to(groupId).emit('messages-read', { groupId, userId: socket.user._id });
+      } catch (err) {
+        console.error('mark-messages-read error:', err.message);
       }
     });
 

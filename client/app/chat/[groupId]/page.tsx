@@ -46,34 +46,31 @@ export default function ChatPage({ params }: ChatPageProps) {
   }, [groupId, router]);
 
   // Track online members via socket
+  // Track online members via socket
   useEffect(() => {
-    const onOnlineStatus = ({
-      userId,
-      isOnline,
-      userName,
-    }: {
-      userId: string;
-      isOnline: boolean;
-      userName: string;
-    }) => {
-      setOnlineMembers((prev) =>
-        isOnline ? [...new Set([...prev, userName])] : prev.filter((n) => n !== userName)
-      );
+    const onOnlineUsers = (userIds: string[]) => {
+      setOnlineMembers(userIds);
+      
       // Update member status in group
       setGroup((g) => {
         if (!g) return g;
         return {
           ...g,
-          members: g.members.map((m: User) =>
-            m.id === userId ? { ...m, isOnline } : m
-          ),
+          members: g.members.map((m: User) => ({
+            ...m,
+            isOnline: userIds.includes(m.id || (m as any)._id)
+          })),
         };
       });
     };
 
-    socket.on("user-online-status", onOnlineStatus);
+    socket.on("online-users", onOnlineUsers);
+    
+    // Fetch initial state in case the connection broadcast was missed before this component mounted
+    socket.emit("request-online-users");
+
     return () => {
-      socket.off("user-online-status", onOnlineStatus);
+      socket.off("online-users", onOnlineUsers);
     };
   }, [socket]);
 
@@ -172,7 +169,7 @@ export default function ChatPage({ params }: ChatPageProps) {
 
         <div className="flex-1 overflow-y-auto py-2">
           {group.members.map((member: User, i: number) => {
-            const isOnline = member.isOnline || onlineMembers.includes(member.name);
+            const isOnline = member.isOnline || onlineMembers.includes(member.id || (member as any)._id);
             return (
               <motion.div
                 key={member.id}

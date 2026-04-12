@@ -59,4 +59,12 @@ export const getMessages = (groupId: string, page = 1, limit = 50) =>
 export const sendMessage = (groupId: string, content: string) =>
   api.post(`/api/messages/${groupId}`, { content });
 
+export const uploadMedia = (file: File) => {
+  const formData = new FormData();
+  formData.append("media", file);
+  return api.post("/api/upload", formData, {
+    headers: { "Content-Type": "multipart/form-data" },
+  });
+};
+
 export default api;

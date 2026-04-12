@@ -21,6 +21,12 @@ export interface Message {
   _id?: string;
   sender: User;
   groupId: string;
-  content: string;
+  content?: string;
+  mediaUrl?: string;
+  mediaType?: string;
+  isEdited?: boolean;
+  isDeleted?: boolean;
+  readBy?: string[];
+  replyTo?: Message;
   createdAt: string;
 }

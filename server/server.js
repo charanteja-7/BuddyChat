@@ -12,6 +12,7 @@ const connectDB = require('./config/db');
 const authRoutes = require('./routes/auth');
 const groupRoutes = require('./routes/groups');
 const messageRoutes = require('./routes/messages');
+const uploadRoutes = require('./routes/uploadRoutes');
 const initSocket = require('./sockets');
 
 // ── App & HTTP server setup ───────────────────────────────────────────────────
@@ -77,6 +78,7 @@ app.use('/api', (req, res, next) => {
 app.use('/api/auth', authRoutes);
 app.use('/api/groups', groupRoutes);
 app.use('/api/messages', messageRoutes);
+app.use('/api/upload', uploadRoutes);
 
 // Health-check endpoint
 app.get('/health', (req, res) => res.status(200).json({ status: 'ok' }));

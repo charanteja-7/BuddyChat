@@ -14,9 +14,32 @@ const messageSchema = new mongoose.Schema(
     },
     content: {
       type: String,
-      required: [true, 'Message content cannot be empty'],
       trim: true,
       maxlength: [2000, 'Message cannot exceed 2000 characters'],
+    },
+    mediaUrl: {
+      type: String,
+    },
+    mediaType: {
+      type: String,
+    },
+    isEdited: {
+      type: Boolean,
+      default: false,
+    },
+    isDeleted: {
+      type: Boolean,
+      default: false,
+    },
+    readBy: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
+      },
+    ],
+    replyTo: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Message',
     },
   },
   { timestamps: true }

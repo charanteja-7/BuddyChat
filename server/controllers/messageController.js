@@ -40,6 +40,10 @@ const getMessages = async (req, res) => {
     const [messages, total] = await Promise.all([
       Message.find({ groupId })
         .populate('sender', 'name email avatar')
+        .populate({
+          path: 'replyTo',
+          populate: { path: 'sender', select: 'name avatar' }
+        })
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(limit),
@@ -69,10 +73,10 @@ const getMessages = async (req, res) => {
 const sendMessage = async (req, res) => {
   try {
     const { groupId } = req.params;
-    const { content } = req.body;
+    const { content, mediaUrl, mediaType, replyTo } = req.body;
 
-    if (!content || !content.trim()) {
-      return res.status(400).json({ message: 'Message content cannot be empty.' });
+    if ((!content || !content.trim()) && !mediaUrl) {
+      return res.status(400).json({ message: 'Message content or media is required.' });
     }
 
     const group = await verifyMembership(req.user._id, groupId, res);
@@ -81,10 +85,16 @@ const sendMessage = async (req, res) => {
     const message = await Message.create({
       sender: req.user._id,
       groupId,
-      content: content.trim(),
+      content: content ? content.trim() : undefined,
+      mediaUrl,
+      mediaType,
+      replyTo,
     });
 
     await message.populate('sender', 'name email avatar');
+    if (message.replyTo) {
+      await message.populate({ path: 'replyTo', populate: { path: 'sender', select: 'name avatar' } });
+    }
 
     return res.status(201).json({ message });
   } catch (error) {
