@@ -6,7 +6,10 @@ const User = require('../models/User');
  * On success, attaches the user document (without password) to req.user.
  */
 const protect = async (req, res, next) => {
-  const token = req.cookies?.token;
+  let token = req.cookies?.token;
+  if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
+    token = req.headers.authorization.split(' ')[1];
+  }
 
   if (!token) {
     return res.status(401).json({ message: 'Not authenticated. Please log in.' });

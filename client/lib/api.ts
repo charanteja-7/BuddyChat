@@ -5,7 +5,23 @@ const api = axios.create({
   withCredentials: true,
 });
 
-// Interceptors can be added here if needed in the future
+api.interceptors.response.use(
+  (response) => {
+    if (response.data?.token) {
+      if (typeof window !== "undefined") localStorage.setItem("token", response.data.token);
+    }
+    return response;
+  },
+  (error) => Promise.reject(error)
+);
+
+api.interceptors.request.use((config) => {
+  const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
+  if (token && config.headers) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
 
 // Auth
 export const register = (name: string, email: string, password: string) =>
@@ -14,7 +30,10 @@ export const register = (name: string, email: string, password: string) =>
 export const login = (email: string, password: string) =>
   api.post("/api/auth/login", { email, password });
 
-export const logout = () => api.post("/api/auth/logout");
+export const logout = () => {
+  if (typeof window !== "undefined") localStorage.removeItem("token");
+  return api.post("/api/auth/logout");
+};
 
 export const getMe = () => api.get("/api/auth/me");
 

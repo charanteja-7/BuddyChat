@@ -12,7 +12,7 @@ const authenticateSocket = (socket) => {
   try {
     const rawCookies = socket.handshake.headers.cookie || '';
     const cookies = cookie.parse(rawCookies);
-    const token = cookies.token;
+    const token = socket.handshake.auth?.token || cookies.token;
 
     if (!token) return null;
 

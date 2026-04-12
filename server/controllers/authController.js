@@ -27,6 +27,8 @@ const issueTokenCookie = (res, userId) => {
     sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'strict',
     maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days in milliseconds
   });
+
+  return token;
 };
 
 /**
@@ -64,11 +66,12 @@ const register = async (req, res) => {
 
     const user = await User.create({ name: sanitizeString(name), email: safeEmail, password });
 
-    issueTokenCookie(res, user._id);
+    const token = issueTokenCookie(res, user._id);
 
     return res.status(201).json({
       message: 'Account created successfully.',
       user: sanitizeUser(user),
+      token,
     });
   } catch (error) {
     console.error('Register error:', error.message);
@@ -105,11 +108,12 @@ const login = async (req, res) => {
     user.isOnline = true;
     await user.save({ validateBeforeSave: false });
 
-    issueTokenCookie(res, user._id);
+    const token = issueTokenCookie(res, user._id);
 
     return res.status(200).json({
       message: 'Logged in successfully.',
       user: sanitizeUser(user),
+      token,
     });
   } catch (error) {
     console.error('Login error:', error.message);

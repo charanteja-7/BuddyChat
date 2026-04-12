@@ -7,6 +7,8 @@ export function useSocket() {
   const [isConnected, setIsConnected] = useState(false);
 
   useEffect(() => {
+    const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
+    socket.auth = { token };
     socket.connect();
 
     const onConnect = () => setIsConnected(true);
