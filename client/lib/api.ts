@@ -5,30 +5,7 @@ const api = axios.create({
   withCredentials: true,
 });
 
-let csrfTokenPromise: Promise<string> | null = null;
-
-async function getCsrfToken() {
-  if (!csrfTokenPromise) {
-    csrfTokenPromise = api.get("/api/csrf-token").then((response) => response.data.csrfToken as string);
-  }
-
-  return csrfTokenPromise;
-}
-
-api.interceptors.request.use(async (config) => {
-  const method = config.method?.toUpperCase();
-  const isUnsafeMethod = method === "POST" || method === "PUT" || method === "PATCH" || method === "DELETE";
-  const isCsrfTokenRequest = config.url?.includes("/api/csrf-token");
-
-  if (!isUnsafeMethod || isCsrfTokenRequest) {
-    return config;
-  }
-
-  const csrfToken = await getCsrfToken();
-  config.headers.set("x-csrf-token", csrfToken);
-
-  return config;
-});
+// Interceptors can be added here if needed in the future
 
 // Auth
 export const register = (name: string, email: string, password: string) =>

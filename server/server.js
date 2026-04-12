@@ -5,7 +5,6 @@ const express = require('express');
 const cors = require('cors');
 const cookieParser = require('cookie-parser');
 const rateLimit = require('express-rate-limit');
-const { doubleCsrf } = require('csrf-csrf');
 const { Server } = require('socket.io');
 
 const connectDB = require('./config/db');
@@ -44,35 +43,6 @@ app.use(
     message: { message: 'Too many requests. Please try again later.' },
   })
 );
-
-// ── CSRF protection (double-submit cookie pattern) ────────────────────────────
-
-const { generateCsrfToken, doubleCsrfProtection } = doubleCsrf({
-  getSecret: () => process.env.JWT_SECRET || 'csrf-fallback-secret',
-  getSessionIdentifier: (req) => req.headers['user-agent'] || 'unknown-agent',
-  cookieName: 'x-csrf-token',
-  cookieOptions: {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'strict',
-  },
-  getCsrfTokenFromRequest: (req) => req.headers['x-csrf-token'],
-});
-
-// Endpoint the SPA calls once on load to obtain a CSRF token
-app.get('/api/csrf-token', (req, res) => {
-  res.json({ csrfToken: generateCsrfToken(req, res) });
-});
-
-// Apply CSRF validation only to unsafe API methods and keep the token endpoint public.
-const csrfProtectedMethods = new Set(['POST', 'PUT', 'PATCH', 'DELETE']);
-app.use('/api', (req, res, next) => {
-  if (req.path === '/csrf-token' || !csrfProtectedMethods.has(req.method)) {
-    return next();
-  }
-
-  return doubleCsrfProtection(req, res, next);
-});
 
 // ── Routes ────────────────────────────────────────────────────────────────────
 
